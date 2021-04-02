@@ -1,11 +1,10 @@
 import 'dart:ui';
+import 'package:ble_scanner/screens/scanner_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ble_lib/flutter_ble_lib.dart';
-
-final BleManager ble = BleManager();
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BLEDetail extends StatefulWidget {
-  final ScanResult device;
+  final DiscoveredDevice device;
 
   const BLEDetail({this.device});
 
@@ -14,7 +13,7 @@ class BLEDetail extends StatefulWidget {
 }
 
 class _BLEDetailState extends State<BLEDetail> {
-  ScanResult device;
+  DiscoveredDevice device;
   @override
   void initState() {
     initalize();
@@ -31,21 +30,21 @@ class _BLEDetailState extends State<BLEDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.device.peripheral.name == '' ||
-                widget.device.peripheral.name == null
+        title: Text(widget.device.name == '' || widget.device.name == null
             ? 'Unknown'
-            : "${widget.device.peripheral.name}"),
+            : "${widget.device.name}"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: StreamBuilder<ScanResult>(
+        child: StreamBuilder<DiscoveredDevice>(
           initialData: device,
-          stream: ble.startPeripheralScan(scanMode: ScanMode.lowLatency),
+          stream: ble.scanForDevices(
+            withServices: [],
+            scanMode: ScanMode.balanced,
+          ),
           builder: (BuildContext context, snapshot) {
             if (snapshot.hasData) {
-              final ScanResult peripheral = snapshot.data;
-              if (peripheral.peripheral.identifier ==
-                  device.peripheral.identifier) {
+              if (snapshot.data.id == device.id) {
                 device = snapshot.data;
               } else {
                 // Navigator.pop(context);
@@ -64,17 +63,16 @@ class _BLEDetailState extends State<BLEDetail> {
                   ),
                   spTile(
                     name: 'Name:',
-                    value: device.peripheral.name == '' ||
-                            device?.peripheral?.name == null
+                    value: device.name == '' || device?.name == null
                         ? 'Unknown'
-                        : "${device.peripheral.name}",
+                        : "${device?.name}",
                   ),
                   SizedBox(
                     height: 15,
                   ),
                   spTile(
                     name: 'Address:',
-                    value: device.peripheral.identifier ?? 'Unknown',
+                    value: device.id ?? 'Unknown',
                   ),
                   SizedBox(
                     height: 15,
