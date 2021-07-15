@@ -8,7 +8,6 @@ import 'package:system_shortcuts/system_shortcuts.dart';
 
 final ble = FlutterReactiveBle();
 
-
 class ScannerPage extends StatefulWidget {
   @override
   _ScannerPageState createState() => _ScannerPageState();
@@ -16,6 +15,8 @@ class ScannerPage extends StatefulWidget {
 
 class _ScannerPageState extends State<ScannerPage> {
   List<DiscoveredDevice> devices = [];
+
+  bool scanning = false;
 
   @override
   void initState() {
@@ -42,9 +43,17 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   searchForDevices() async {
-    setState(()  {
+    setState(() {
+      scanning = true;
+    });
+    if (await SystemShortcuts.checkBluetooth == false) {
+      SystemShortcuts.bluetooth();
+    }
+    setState(() {
       //Clear array
       devices = [];
+      print(devices);
+      scanning = false;
     });
   }
 
@@ -57,10 +66,9 @@ class _ScannerPageState extends State<ScannerPage> {
       body: StreamBuilder<DiscoveredDevice>(
         stream: ble.scanForDevices(
           withServices: [],
-          scanMode: ScanMode.balanced,
+          scanMode: ScanMode.opportunistic,
         ),
         builder: (context, snapshot) {
-        
           if (snapshot.hasData &&
               snapshot.connectionState == ConnectionState.active) {
             if (devices.isNotEmpty) {
@@ -109,15 +117,13 @@ class _ScannerPageState extends State<ScannerPage> {
                     subtitle: Text("${devices[index]?.id}" ?? 'Unknown'),
                   );
                 });
-          }
-         else if (
-              snapshot.connectionState == ConnectionState.waiting) {
+          } else if (snapshot.connectionState == ConnectionState.waiting || scanning ==true) {
             return Center(
               child: Text('Scanning'),
             );
-          } else if (snapshot.hasError) {
+          } else if (snapshot.hasData == false && snapshot.data == null) {
             return Center(
-              child: Text('Bluetooth disabled'),
+              child: Text('No Bluetooth device found'),
             );
           } else {
             return Center(
